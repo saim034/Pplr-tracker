@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101827">
+<title>My PPLR Tracker</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#131e30;--panel2:#1b2940;--line:#2a3a53;--text:#eef4ff;--muted:#a7b6cc;--green:#36c987;--blue:#70a7ff;--red:#ff7272}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#101a2b,#080e18);font:16px system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text);min-height:100vh}
+main{max-width:760px;margin:auto;padding:22px 15px 50px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.eyebrow{color:var(--muted);font-size:12px;letter-spacing:2px}.brand{font-size:25px;font-weight:850;letter-spacing:.4px}.pill{background:#173b35;color:#8ff0c4;border:1px solid #286b58;border-radius:99px;padding:6px 11px;font-size:12px}
+.panel{background:rgba(19,30,48,.96);border:1px solid var(--line);border-radius:18px;padding:16px;margin-top:15px;box-shadow:0 10px 30px #0002}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:var(--panel2);padding:13px;border-radius:13px}.big{font-size:27px;font-weight:800}.muted{color:var(--muted);font-size:13px}
+.progress{height:9px;background:#27364c;border-radius:99px;overflow:hidden;margin-top:12px}.bar{height:100%;background:var(--green);width:0;transition:width .2s}
+.days{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.day{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:11px 5px;color:var(--text);cursor:pointer;text-align:center}.day.active{border-color:var(--green);background:#173b35}.day small{display:block;color:var(--muted);font-size:11px}.day strong{display:block;margin:5px 0}.day .mark{font-size:12px;color:var(--green)}
+h2{font-size:18px;margin:0 0 12px}h3{font-size:16px;margin:0}.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.exercise{border:1px solid var(--line);border-radius:13px;padding:13px;margin:10px 0;background:#101a2a}.exercise .reps{font-size:22px;font-weight:800;margin:5px 0}.actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+button{border:0;border-radius:10px;padding:10px 13px;font-weight:700;background:var(--green);color:#062318;cursor:pointer}button.secondary{background:#293951;color:var(--text)}button.danger{background:#512a35;color:#ffd8df}button.blue{background:#24436c;color:#dceaff}button:active{transform:scale(.98)}
+label{display:block;font-size:13px;color:var(--muted);margin:8px 0 5px}input,select{width:100%;background:#0b1422;border:1px solid var(--line);border-radius:10px;padding:12px;color:var(--text);font:inherit}input:focus{outline:2px solid #36c98766}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}.check{display:flex;align-items:center;gap:9px;margin:8px 0}.check input{width:20px;height:20px;accent-color:var(--green)}
+.empty{padding:15px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+footer{color:var(--muted);font-size:12px;text-align:center;margin:20px 8px}
+@media(max-width:420px){.brand{font-size:21px}.panel{padding:13px}.days{gap:6px}.day{padding:9px 3px}}
+</style>
+
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#101827">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PPLR Tracker">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+</script>
+</head>
+<body>
+<main>
+ <div class="top"><div><div class="eyebrow">YOUR PERSONAL TRAINING LOG</div><div class="brand">MY PPLR TRACKER</div></div><span class="pill">8-DAY CYCLE</span></div>
+ <section class="panel">
+  <div class="stats">
+   <div class="stat"><div class="big" id="completed">0/6</div><div class="muted">Training days done</div></div>
+   <div class="stat"><div class="big" id="percent">0%</div><div class="muted">Cycle completion</div></div>
+  </div>
+  <div class="progress"><div class="bar" id="bar"></div></div>
+  <div class="muted" style="margin-top:14px">Choose a day in your PPLR cycle</div>
+  <div class="days" id="days"></div>
+ </section>
+ <section class="panel">
+  <div class="row"><h2 id="dayTitle">Day 1 · Push</h2><span class="pill" id="status">NOT DONE</span></div>
+  <label class="check"><input type="checkbox" id="dayDone"> Mark this day complete</label>
+  <div id="exerciseList"></div>
+ </section>
+ <section class="panel">
+  <h2 id="formTitle">Add an exercise</h2>
+  <form id="exerciseForm">
+   <div class="formgrid">
+    <div class="full"><label for="exerciseName">Exercise name</label><input id="exerciseName" required maxlength="60" placeholder="e.g. Push-ups"></div>
+    <div><label for="sets">Sets</label><input id="sets" type="number" min="1" max="20" value="3" required></div>
+    <div><label for="reps">Reps per set</label><input id="reps" type="number" min="1" max="200" value="12" required></div>
+   </div>
+   <div class="actions"><button type="submit" id="saveBtn">＋ Add exercise</button><button type="button" class="secondary" id="cancelEdit" hidden>Cancel</button></div>
+  </form>
+ </section>
+ <section class="panel">
+  <h2>Progress & backup</h2>
+  <p class="muted">Use “+1 rep” to set a target for next time. Your current entries are saved in this browser on this device.</p>
+  <div class="actions">
+   <button class="blue" id="exportBtn">Export backup</button>
+   <button class="secondary" id="importBtn">Import backup</button>
+   <button class="danger" id="resetBtn">Reset cycle</button>
+  </div>
+  <input type="file" id="importFile" accept="application/json" hidden>
+ </section>
+ <footer>Tip: Increase reps gradually only when every set is completed with comfortable, controlled form. Keep a rest day between demanding sessions.</footer>
+</main>
+<script>
+const dayNames=['Push','Pull','Legs','Rest','Push','Pull','Legs','Rest'];
+const icons=['💪','🦾','🦵','😴','💪','🦾','🦵','😴'];
+const KEY='myPPLRTracker_v1';
+let state=load(), selected=1, editing=null;
+function fresh(){return dayNames.map((name,i)=>({name,done:false,exercises:[]}));}
+function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(Array.isArray(x)&&x.length===8)return x;}catch(e){}return fresh();}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));render();}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function render(){
+ const workouts=state.filter(d=>d.name!=='Rest'), done=workouts.filter(d=>d.done).length;
+ document.getElementById('completed').textContent=`${done}/6`;
+ document.getElementById('percent').textContent=Math.round(done/6*100)+'%';
+ document.getElementById('bar').style.width=(done/6*100)+'%';
+ document.getElementById('days').innerHTML=state.map((d,i)=>`<button class="day ${selected===i+1?'active':''}" data-day="${i+1}"><small>DAY ${i+1}</small><strong>${icons[i]} ${d.name}</strong><span class="mark">${d.done?'✓ Done':d.name==='Rest'?'Recovery':'○'}</span></button>`).join('');
+ document.querySelectorAll('[data-day]').forEach(b=>b.addEventListener('click',()=>{selected=+b.dataset.day;cancelEdit();render();}));
+ const d=state[selected-1];
+ document.getElementById('dayTitle').textContent=`Day ${selected} · ${d.name}`;
+ document.getElementById('status').textContent=d.done?'DONE':'NOT DONE';
+ document.getElementById('status').style.color=d.done?'#8ff0c4':'#ffd28a';
+ document.getElementById('dayDone').checked=d.done;
+ const list=document.getElementById('exerciseList');
+ if(d.name==='Rest'){list.innerHTML='<div class="empty">😴 Recovery day. Rest, hydrate and get ready for the next session.</div>';}
+ else if(!d.exercises.length){list.innerHTML='<div class="empty">No exercises yet. Add your own below.</div>';}
+ else {list.innerHTML=d.exercises.map(e=>`<article class="exercise">
+  <div class="row"><h3>${esc(e.name)}</h3><span class="muted">${e.done?'✓ Completed':'Pending'}</span></div>
+  <div class="reps">${e.sets} × ${e.reps}</div>
+  <div class="muted">Next target: ${e.sets} × ${e.nextReps||e.reps} reps</div>
+  <div class="actions">
+   <button class="secondary" data-action="toggle" data-id="${e.id}">${e.done?'Undo':'Mark done'}</button>
+   <button class="blue" data-action="plus" data-id="${e.id}">+1 rep target</button>
+   <button class="secondary" data-action="edit" data-id="${e.id}">Edit</button>
+   <button class="danger" data-action="delete" data-id="${e.id}">Delete</button>
+  </div></article>`).join('');}
+ list.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',()=>act(b.dataset.action,b.dataset.id)));
+}
+function act(action,id){const d=state[selected-1],e=d.exercises.find(x=>String(x.id)===String(id));if(!e)return;
+ if(action==='toggle')e.done=!e.done;
+ if(action==='plus')e.nextReps=(e.nextReps||e.reps)+1;
+ if(action==='edit'){editing=e.id;document.getElementById('exerciseName').value=e.name;document.getElementById('sets').value=e.sets;document.getElementById('reps').value=e.reps;document.getElementById('formTitle').textContent='Edit exercise';document.getElementById('saveBtn').textContent='Save changes';document.getElementById('cancelEdit').hidden=false;document.getElementById('exerciseName').focus();return;}
+ if(action==='delete'&&confirm('Delete this exercise?'))d.exercises=d.exercises.filter(x=>x.id!==e.id);
+ save();}
+function cancelEdit(){editing=null;document.getElementById('exerciseForm').reset();document.getElementById('sets').value=3;document.getElementById('reps').value=12;document.getElementById('formTitle').textContent='Add an exercise';document.getElementById('saveBtn').textContent='＋ Add exercise';document.getElementById('cancelEdit').hidden=true;}
+document.getElementById('dayDone').addEventListener('change',e=>{state[selected-1].done=e.target.checked;save();});
+document.getElementById('exerciseForm').addEventListener('submit',e=>{e.preventDefault();const d=state[selected-1];if(d.name==='Rest')return alert('Rest day has no exercise list.');const item={name:document.getElementById('exerciseName').value.trim(),sets:+document.getElementById('sets').value,reps:+document.getElementById('reps').value};if(!item.name||item.sets<1||item.reps<1)return;
+ if(editing!==null){const old=d.exercises.find(x=>x.id===editing);Object.assign(old,item);old.nextReps=old.nextReps||item.reps;}
+ else d.exercises.push({...item,id:Date.now(),done:false,nextReps:item.reps});
+ cancelEdit();save();});
+document.getElementById('cancelEdit').addEventListener('click',cancelEdit);
+document.getElementById('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='my-pplr-backup.json';a.click();URL.revokeObjectURL(a.href);});
+document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const x=JSON.parse(await f.text());if(!Array.isArray(x)||x.length!==8)throw Error();state=x;save();alert('Backup imported!');}catch(err){alert('That backup file is not valid.');}e.target.value='';});
+document.getElementById('resetBtn').addEventListener('click',()=>{if(confirm('Reset all 8 days and remove all exercises? Export a backup first if you want to keep your data.')){state=fresh();selected=1;cancelEdit();save();}});
+render();
+</script>
+</body></html>
